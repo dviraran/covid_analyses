@@ -52,9 +52,21 @@ Between December 20, 2020 and January 31, 2021, there were 3,082,190 individuals
 1,215,797 over the age of 60. By that date, 1,789,836 have already received their second dose of the vaccine. Of all those vaccinated, 31,810 
 individuals have tested positive for SARS-CoV2, and 1,525 have been hospitalized with severe or critical conditions or died (Table 1).
 
+**Table 1. Number of cases as reported by the Ministry of Health.**
+
+|                     | Positive cases (>60y) | Positive cases (<60y) | Severe / critical / death cases |
+|---------------------|-----------------------|-----------------------|---------------------------------|
+| 1st dose, day 0-13  | 7,070                 | 13,610                | 960                             |
+| 1st dose, day 14-21 | 4,606                 | 3,931                 | 458                             |
+| 2nd dose, day 0-6   | 1,005                 | 799                   | 80                              |
+| 2nd dose, day >6    | 531                   | 258                   | 27                              |
+
+
 Based on daily numbers of vaccinations and rates of general incidence we estimated expected numbers of cases and severe hospitalizations. 
 The analysis suggests that for individuals aged 60 and above, there was a 28% reduction in SARS-CoV2 positive cases by day 13 of the first dose, 
 43% between days 14 to 21 of the first dose, 80% between the second dose and day 6 and 83% after day 7 of the second dose (Figure 1).
+
+![alt text](https://github.com/dviraran/covid_analyses/blob/master/figure1.jpg)
 
 However, an underlying assumption here is that the incidence rates of those that were vaccinated early are similar to the general population. 
 Previous analyses have shown that this is not the case as older populations have lower incidence and lower socio-economic groups have higher 
