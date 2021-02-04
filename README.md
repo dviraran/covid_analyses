@@ -90,5 +90,16 @@ Other attempts to identify the impact of the vaccination campaign in Israel are 
 
 In conclusion, this study provides the first attempt to estimate the effectiveness of the BNT162b2 vaccine on a population level compared to the general population. Our analysis provides strong reassurance that the vaccine is highly effective. With more data that will be shared with the public we believe that more accurate estimation can be calculated.
 
+## Data and code availability
+
+All data is public and can be downloaded from https://data.gov.il/dataset/covid-19 or Ministry of Health press releases. Data and code used in the analyses was deposited in https://github.com/dviraran/covid_analyses. In addition, we provide an interactive shiny app, which will be updated as more data is available by the Ministry of Health - https://dviraran.shinyapps.io/VaccineEffectIsrael/. 
+
+## Acknowledgments
+
+DA is supported by the Azrieli Faculty Fellowship and is an Andre Deloro Fellow. We thank Uri Shalit for his valuable comments.
+
+## Funding
+
+There was no specific funding for this study.
 
 
