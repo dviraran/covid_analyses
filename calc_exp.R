@@ -90,7 +90,7 @@ df$Cases60minus = x$value
 x = melt(res[[2]], id.vars ='beta')
 df$Cases60minus.SE = x$value
 
-res = runAnalysisForBeta(moh$Severe60plus+moh$Severe60min,vac_1dose,vac_2dose,patients_data,cohort_size/3)
+res = runAnalysisForBeta(moh$Severe60plus+moh$Severe60min,vac_1dose,vac_2dose,patients_data)
 x = melt(res[[1]], id.vars ='beta')
 df$Severe = x$value
 x = melt(res[[2]], id.vars ='beta')
