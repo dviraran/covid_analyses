@@ -44,7 +44,7 @@ For positive cases of aged 60 years and above, we find the lower and upper bound
 
 Similarly, we perform the analysis for hospitalizations and severe cases. For hospitalizations our analysis suggests beta values of 3.82 to 5.1, which imply that those vaccinated have 3.82 to 5.1-fold more chance of being hospitalized. These values fit with the demographics of the vaccinated cohort. Again, we see a mild effect of -4% to 20% by day 20. After the second dose we find 76-82% reduction in hospitalizations, which increase to 83-87% reduction a week later. For severe case we estimate the beta values to be between 3.15 and 4.2. Up to day 20 we find -8% to 19% reduction in severe cases, and after the second dose we observe a reduction of 70-77% and 83-87% after day 7. 	
 
-![alt text](https://github.com/dviraran/covid_analyses/blob/master/figure1.jpg)
+![alt text](https://github.com/dviraran/covid_analyses/blob/master/figure1.2.5.2021.jpg)
 
 ## Discussion
 
