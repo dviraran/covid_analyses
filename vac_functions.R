@@ -130,6 +130,56 @@ runAnalysisForBeta = function(observed,vac1,vac2,counts_data,cohort_size=9200000
   list(d,se)
 }
 
+createPlot = function(df) {
+  #x = melt(df,id.vars = c('beta','Group'))
+  min.vals = apply(df[,seq(3,ncol(df),by=3)],2,FUN=function(x) min(which(x>0.01 & df$Group=='1st dose 0-13')))
+  x = matrix(NA,length(min.vals),5)
+  xlow = matrix(NA,length(min.vals),5)
+  xhi = matrix(NA,length(min.vals),5)
+  for (i in 1:length(min.vals)) {
+    beta = df[min.vals[i],'beta']
+    x[i,] = df[df$beta==beta,colnames(df)==names(min.vals)[i]]
+    xlow[i,] = df[df$beta==beta,which(colnames(df)==names(min.vals)[i])+1]
+    xhi[i,] = df[df$beta==beta,which(colnames(df)==names(min.vals)[i])+2]
+  }
+  
+  rownames(x) = names(min.vals)
+  colnames(x) = unique(df$Group)
+  x = x[,c(4:5,1:3)]
+  xlow = xlow[,c(4:5,1:3)]
+  xhi = xhi[,c(4:5,1:3)]
+  x = x[c(1,3,5,2,4,6),]
+  xlow = xlow[c(1,3,5,2,4,6),]
+  xhi = xhi[c(1,3,5,2,4,6),]
+  x = melt(x)
+  xlow = melt(xlow)
+  xhi = melt(xhi)
+  
+  x$Years = '60+'
+  x$Years[grepl('minus',x$Var1)] = '60-'
+  x$Group = 'Positive cases'
+  x$Group[grepl('Hosp',x$Var1)] = 'Hospitalizations'
+  x$Group[grepl('Severe',x$Var1)] = 'Severe'
+  x$Years = factor(x$Years,levels=c('60+','60-'))
+  x$Group = factor(x$Group,levels=c('Positive cases','Hospitalizations','Severe'))
+  
+  ggplot(x,aes(y=value,x=Var2,fill=Var2))+
+    geom_bar(stat="identity", color="black", 
+             position=position_dodge()) +
+    geom_errorbar(aes(ymin=xlow$value, ymax=xhi$value), width=.2,
+                  position=position_dodge(.9)) +
+    theme_classic()+facet_grid(Years~Group)+ylab('Vaccine Effectiveness')+xlab('')+
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+    geom_text(aes(label=paste0(round(100*value),'%')), vjust=1.6, color="white",position=position_dodge(0.9), size=2)+
+    scale_fill_brewer(palette='Set1')+theme(legend.position = "none")+
+    theme(strip.text.x = element_text(face="bold"),
+          strip.text.y = element_text(face="bold"),
+          strip.background = element_rect(fill='gray'))
+  
+  
+}
+  
+  
 createPlot = function(df,field,tit) {
   df$Cases = df[,field]
   df$Cases.low = df[,paste0(field,'.low')]
