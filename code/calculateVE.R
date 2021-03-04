@@ -7,26 +7,27 @@ library(plyr)
 library(superheat)
 library(ggpubr)
 
-### GET DATA
+source('~/Documents/covid_analyses/code/vac_functions.R')
+### READ DATA
 
 last.date='2021-02-22'
 
 # https://data.gov.il/dataset/covid-19/resource/57410611-936c-49a6-ac3c-838171055b1f/download/vaccinated-per-day-2021-02-09.csv
-vac_data = read.csv('~/Documents/covid_analyses/vaccinated-per-day-2021-02-27.csv',header = T,row.names = NULL,stringsAsFactors = F)
+vac_data = read.csv('~/Documents/covid_analyses/data/vaccinated-per-day-2021-02-27.csv',header = T,row.names = NULL,stringsAsFactors = F)
 vac_data = vac_data[vac_data$VaccinationDate<=last.date,]
 
-death = read.csv('~/Documents/covid_analyses/deadPatientsPerDate.csv',header = T,row.names = NULL,stringsAsFactors = F)
+death = read.csv('~/Documents/covid_analyses/data/deadPatientsPerDate.csv',header = T,row.names = NULL,stringsAsFactors = F)
 death$date = as.Date(death$date)
 death = death[death$date>='2020-12-20' & death$date<='2021-02-22',]
 
-moh = read.csv('~/Documents/covid_analyses/moh_data.2.23.2021.csv',header = T,row.names = 1,stringsAsFactors = F)
+moh = read.csv('~/Documents/covid_analyses/data/moh_data.2.23.2021.csv',header = T,row.names = 1,stringsAsFactors = F)
 
-### 
-
-rossman = read.csv('~/Documents/covid_analyses/Fig2_national_3rd_lockdown_y_vectors_daily.csv',header = T,row.names = NULL,stringsAsFactors = F)
+rossman = read.csv('~/Documents/covid_analyses/data/Fig2_national_3rd_lockdown_y_vectors_daily.csv',header = T,row.names = NULL,stringsAsFactors = F)
 rossman$date = as.Date(rossman$X)
 rossman = rossman[rossman$date>='2020-12-20',]
 #rossman[rossman$date>'2021-02-15',substr(colnames(rossman),1,1)=='y'] = 0
+
+### ORGANZIE DATA
 
 rossman_cases_60plus = rossman
 rossman_cases_60plus$amount = (rossman[,'y_pos_3_national_60.'])
@@ -43,7 +44,6 @@ rossman_severe_60plus$amount = (rossman[,'y_sevhosped_3_national_60.'])
 rossman_severe_60min = rossman
 rossman_severe_60min$amount = (rossman[,'y_sevhosped_3_national_0.59'])
 
-### ORGANZIE DATA
 
 A = vac_data$age_group %in% c('60-69','70-79','80-89','90+')
 vac_1dose_old = aggregate(as.numeric(vac_data$first_dose[A]),by=list(vac_data$VaccinationDate[A]),sum,na.rm=T)
@@ -63,14 +63,27 @@ colnames(vac_1dose_old) = colnames(vac_1dose_yng)
 colnames(vac_1dose) = colnames(vac_1dose_yng) 
 colnames(vac_2dose) = colnames(vac_1dose_yng) 
 
-cohort_size = 9200000
+### CREATE SUPP FIGURE
 
+p1 = getCounts(vac_1dose_old,rossman_cases_60plus,'2020-12-20',last.date,0,14,cohort_size = cohort_size,create_plot ='group1',tit='Group 1 - 1st dose 0-13')
+p2 = getCounts(vac_1dose_old,rossman_cases_60plus,'2020-12-20',last.date,14,7,cohort_size=cohort_size,create_plot ='group2',tit='Group 2 - 1st dose 14-20')
+p3 = getCounts(vac_2dose_old,rossman_cases_60plus,'2021-01-10',last.date,0,7,cohort_size=cohort_size,create_plot ='group3',tit='Group 3 - 2nd dose 0-6')
+p4 = getCounts(vac_2dose_old,rossman_cases_60plus,'2021-01-10',last.date,7,7,cohort_size=cohort_size,create_plot ='group4',tit='Group 4 - 2nd dose 7-13')
+p5 = getCounts(vac_2dose_old,rossman_cases_60plus,'2021-01-10',last.date,14,30,cohort_size=cohort_size,create_plot ='group5',tit='Group 5 - 2nd dose 14+')
 
-getCounts(vac_1dose_old,rossman_cases_60plus,'2020-12-20',last.date,0,14,cohort_size = cohort_size,create_plot ='group1')
-getCounts(vac_1dose_old,rossman_cases_60plus,'2020-12-20',last.date,14,7,cohort_size=cohort_size,create_plot ='group2')
-getCounts(vac_2dose_old,rossman_cases_60plus,'2021-01-10',last.date,0,7,cohort_size=cohort_size,create_plot ='group3')
-getCounts(vac_2dose_old,rossman_cases_60plus,'2021-01-10',last.date,7,7,cohort_size=cohort_size,create_plot ='group4')
-getCounts(vac_2dose_old,rossman_cases_60plus,'2021-01-10',last.date,14,30,cohort_size=cohort_size,create_plot ='group5')
+ggarrange(p1$plot,p2$plot,p3$plot,p4$plot,p5$plot)
+ggsave('~/Documents/covid_analyses/plots/supp_fig1_old.pdf',width=14,height = 10)
+
+p1 = getCounts(vac_1dose_yng,rossman_cases_60minus,'2020-12-20',last.date,0,14,cohort_size = cohort_size,create_plot ='group1',tit='Group 1 - 1st dose 0-13')
+p2 = getCounts(vac_1dose_yng,rossman_cases_60minus,'2020-12-20',last.date,14,7,cohort_size=cohort_size,create_plot ='group2',tit='Group 2 - 1st dose 14-20')
+p3 = getCounts(vac_2dose_yng,rossman_cases_60minus,'2021-01-10',last.date,0,7,cohort_size=cohort_size,create_plot ='group3',tit='Group 3 - 2nd dose 0-6')
+p4 = getCounts(vac_2dose_yng,rossman_cases_60minus,'2021-01-10',last.date,7,7,cohort_size=cohort_size,create_plot ='group4',tit='Group 4 - 2nd dose 7-13')
+p5 = getCounts(vac_2dose_yng,rossman_cases_60minus,'2021-01-10',last.date,14,30,cohort_size=cohort_size,create_plot ='group5',tit='Group 5 - 2nd dose 14+')
+
+ggarrange(p1$plot,p2$plot,p3$plot,p4$plot,p5$plot)
+ggsave('~/Documents/covid_analyses/plots/supp_fig1_yng.pdf',width=14,height = 10)
+
+### CALCULATE ESTIMATIONS
 
 res = runAnalysisForBeta(moh$Cases60plus,vac_1dose_old,vac_2dose_old,rossman_cases_60plus,cohort_size=1428000,'cases')
 df = melt(res[[1]], id.vars ='beta')
@@ -122,20 +135,14 @@ x = melt(res[[2]], id.vars ='beta')
 df$Deceased.low = x$value[grepl('low',x$variable)]
 df$Deceased.hi = x$value[grepl('hi',x$variable)]
 
-# 
-# res = runAnalysisForBeta(moh$Deceased,vac_1dose_old,vac_2dose_old,death)
-# x = melt(res[[1]], id.vars ='beta')
-# df$Deceased = x$value
-# x = melt(res[[2]], id.vars ='beta')
-# df$Severe.low = x$value[grepl('low',x$variable)]
-# df$Severe.hi = x$value[grepl('hi',x$variable)]
-
 df$variable = mapvalues(df$variable,from=c('Dose2.0', 'Dose2.7', 'Dose2.14', 'Dose1.0', 'Dose1.14'), 
                         to=c('2nd dose 0-6','2nd dose 7-13','2nd dose 14+','1st dose 0-13','1st dose 14-20'))
 colnames(df)[2] = 'Group'
 
 df$Group <- factor(df$Group,
                    levels = c('1st dose 0-13','1st dose 14-20','2nd dose 0-6','2nd dose 7-13','2nd dose 14+'))
+
+### CREATE PLOTS
 
 p1 = createPlot(df,'Cases60plus','Positive cases >60')
 p2 = createPlot(df,'Cases60minus','Positive cases <60')
@@ -147,50 +154,35 @@ p6 = createPlot(df,'Severe60minus','Severe cases <60')
 p7 = createPlot(df,'Deceased','Deceased')
 
 createPlotBars(df)
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.bars.pdf',width=8,height = 6)
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.bars.jpg',width=8,height = 6)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.23.2021.bars.pdf',width=8,height = 6)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.23.2021.bars.jpg',width=8,height = 6)
 
 
 ggarrange(p1, p2, p3, p4,p5,p6, ncol=2, nrow=3, common.legend = TRUE, legend="bottom",labels=c('A','B','C','D','E','F'))
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.pdf',width=8,height = 8)
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.jpg',width=8,height = 8)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.23.2021.pdf',width=8,height = 8)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.23.2021.jpg',width=8,height = 8)
 
 ggarrange(p1, p2, ncol=2, nrow=1, common.legend = TRUE, legend="bottom",labels=c('A','B'))
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.cases.pdf',width=8,height = 4)
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.cases.jpg',width=8,height = 4)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.23.2021.cases.pdf',width=8,height = 4)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.23.2021.cases.jpg',width=8,height = 4)
 
 ggarrange(p3, p4, ncol=2, nrow=1, common.legend = TRUE, legend="bottom",labels=c('A','B'))
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.hosp.pdf',width=8,height = 4)
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.hosp.jpg',width=8,height = 4)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.23.2021.hosp.pdf',width=8,height = 4)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.23.2021.hosp.jpg',width=8,height = 4)
 
 ggarrange(p5, p6, ncol=2, nrow=1, common.legend = TRUE, legend="bottom",labels=c('A','B'))
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.severe.pdf',width=8,height = 4)
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.severe.jpg',width=8,height = 4)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.23.2021.severe.pdf',width=8,height = 4)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.23.2021.severe.jpg',width=8,height = 4)
 
+ggsave('~/Documents/covid_analyses/plots/figure1.2.10.2021.pdf',width=7,height = 9)
 
+ggsave('~/Documents/covid_analyses/plots/figure1.2.10.2021.p1.pdf',p1,width=5,height = 3.2)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.10.2021.p2.pdf',p2,width=5,height = 3.2)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.10.2021.p3.pdf',p3,width=5,height = 3.2)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.10.2021.p4.pdf',p4,width=5,height = 3.2)
+ggsave('~/Documents/covid_analyses/plots/figure1.2.10.2021.p5.pdf',p5,width=5,height = 3.2)
 
-
-#plot_grid(p1+theme(legend.position = "none"),p2+theme(legend.position = "none"),p3+theme(legend.position = "none"),p4+theme(legend.position = "none"),ncol=2)
-ggsave('~/Documents/covid_analyses/figure1.2.10.2021.pdf',width=7,height = 9)
-
-ggsave('~/Documents/covid_analyses/figure1.2.10.2021.p1.pdf',p1,width=5,height = 3.2)
-ggsave('~/Documents/covid_analyses/figure1.2.10.2021.p2.pdf',p2,width=5,height = 3.2)
-ggsave('~/Documents/covid_analyses/figure1.2.10.2021.p3.pdf',p3,width=5,height = 3.2)
-ggsave('~/Documents/covid_analyses/figure1.2.10.2021.p4.pdf',p4,width=5,height = 3.2)
-ggsave('~/Documents/covid_analyses/figure1.2.10.2021.p5.pdf',p5,width=5,height = 3.2)
-
-x = df[df$beta==1,]
-ggplot(x,aes(x=Group,y=Cases60plus,fill=Group)) + geom_col(position='dodge', color="black")+theme_classic()+ylab('1-Observed/Expected')+
-  geom_text(aes(label=paste0(round(100*Cases60plus),'%')), vjust=1.6, color="white",position=position_dodge(0.9), size=6.5)+
-  scale_fill_brewer(palette='Set1')+ggtitle('Estimated reduction in cases (60+)')+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())
-ggsave('~/Documents/covid_analyses/bars.beta1.2.5.2021.60plus.pdf',width=5,height = 6)
-
-
-
-####
+#### SHIFT TEST
 
 d1 = runAnalysis14days(moh$Cases60plus,vac_1dose_old,vac_2dose_old,rossman_cases_60plus,cohort_size=1428000,beta=0.79,p2=0.73,dash=2)
 d2 = runAnalysis14days(moh$Hosp60plus,vac_1dose_old,vac_2dose_old,rossman_hosp_60plus,cohort_size=1428000,beta=0.7,p2=0.81,dash=4)
@@ -203,12 +195,7 @@ ggplot(d,aes(Days_Removed,value,color=variable,group=variable))+geom_line()+geom
   geom_vline(xintercept=4,linetype='dashed')+
   geom_vline(xintercept=8,linetype='dashed')
 
-#ggarrange(d1+ggtitle('Positive cases'),d2+ggtitle('Hospitalizations'),d3+ggtitle('Severe cases'),nrow=1)
 ggsave('~/Documents/covid_analyses/figure1.2.23.2021.shift.jpg',width=8,height = 3)
-
-createPlotBars(df)
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.bars_week.pdf',width=8,height = 6)
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.bars_week.jpg',width=8,height = 6)
 
 
 

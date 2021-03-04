@@ -1,6 +1,6 @@
 library(PropCIs)
 
-getCounts = function(vac_dose,counts_data,date1,date2,days_shift,days_boundary,cohort_size,create_plot=NULL) {
+getCounts = function(vac_dose,counts_data,date1,date2,days_shift,days_boundary,cohort_size,create_plot=NULL,tit=NULL) {
   date1 = as.Date(date1)
   date2 = as.Date(date2)
   
@@ -18,18 +18,29 @@ getCounts = function(vac_dose,counts_data,date1,date2,days_shift,days_boundary,c
   if (!is.null(create_plot)) {
     colnames(m) = as.character(as.Date(seq(date1+days_shift,date2,by=1),origin='1970-01-01'))
     rownames(m) = colnames(m)
-    pdf(paste0('~/Documents/covid_analyses/',create_plot,'.pdf'), height = 8, width = 8)
-    superheat(t(m)[nrow(m):1,],scale=F,pretty.order.rows = F,pretty.order.cols=F,
-              yt=colSums(vac_dose$Count[A]*t(m)),
+    dist.up = colSums(vac_dose$Count[A]*t(m))
+    m = m*8
+    m[(nrow(m)-7):nrow(m),]=m[(nrow(m)-7):nrow(m),]/2
+    m[(nrow(m)-3):nrow(m),]=m[(nrow(m)-3):nrow(m),]/2
+    
+    m[(nrow(m)-1):nrow(m),]=m[(nrow(m)-1):nrow(m),]/2
+    
+    #png(paste0('~/Documents/covid_analyses/plots/',create_plot,'.png'), height = 1600, width = 1600)
+    s = superheat(t(m)[nrow(m):1,],scale=F,pretty.order.rows = F,pretty.order.cols=F,
+              yt=dist.up,
               yt.axis.name='Vaccinated',yr.axis.name='Incidence',
               yt.plot.type = 'scatterline',yr.plot.type = 'scatterline',
               left.label.text.size=2,bottom.label.text.size=2,bottom.label.size=0.21,
               left.label.size=0.21,heat.pal = c("white", "#542788"),
-              bottom.label.text.angle=90,legend = FALSE)
-    dev.off()
+              bottom.label.text.angle=90,legend = FALSE,
+              smooth.heat = TRUE,grid.hline = F,grid.vline = F,
+              title = tit)
+   # dev.off()
+    s
+  } else {
+    
+    vac_with_cert
   }
-  
-  vac_with_cert
   #vac_with_cert = cumsum(vac_dose$Count[A])
   
 }
