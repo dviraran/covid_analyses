@@ -51,33 +51,42 @@ solve_quadratic<-function(a,b,c){
   return(result)
 }
 
-calculateEffectiveness = function(observed, counts,beta,cohort_size,vac_dose,counts_data,date1,date2,days_shift,days_boundary,p2=NULL) {
+calculateEffectiveness = function(observed,counts,beta,cohort_size,vac_dose,counts_data,p2=NULL,group) {
   #Solve[p == 1 - o/((x*b*(s1+s2/(1-p)))/s),p]
-  date1 = as.Date(date1)
-  date2 = as.Date(date2)
- 
+  
   counts = c(rep(0,length(vac_dose$Counts)-length(counts)),counts)
-
   
-  v =  c(vac_dose$Counts)
-  #v = v[1:length(counts)]
-  
-  B = counts_data$date >= date1+days_shift & counts_data$date<=date2
+  v =  vac_dose$Counts
   
   o = observed
-  n = cumsum(v)[B]
-  x = counts[B]
+  n = cumsum(v)
+  x = counts
   h = cohort_size
   b = beta
+  s = counts_data$amount
   
-  s = counts_data$amount[B]
+  if (is.character(group)) {
+    if (group=='cases') {
+      remove_days = 2
+    } else if (group=='hosp') {
+      remove_days = 4
+    } else if (group=='severe') {
+      remove_days = 8
+    }
+  } else if (is.numeric(group)) {
+    remove_days = group
+  }
+  
+  ## remove last days of vaccined.
+  x[(length(x)-(remove_days-1)):length(x)] = 0
+  
   
   if (is.null(p2)) {
-    p = optimize(function(p) { (1-p-o/sum(b*s*x/(h+n*(-1+b-b*p))))^2},interval=seq(0,1,by=0.01))
+    p = optimize(function(p) { (1-p-o/sum(b*s*x/(h+n*(-1+b-b*p))))^2},interval=seq(-0.5,1,by=0.01))
   } else {
-    p = optimize(function(p) { (1-p-o/sum(b*s*x/(h+n*(-1+b-b*p2))))^2},interval=seq(0,1,by=0.01))
+    p = optimize(function(p) { (1-p-o/sum(b*s*x/(h+n*(-1+b-b*p2))))^2},interval=seq(-0.5,1,by=0.01))
   }
-
+  
   p$minimum
 }
 
@@ -91,24 +100,36 @@ calculateCI = function(obs,p) {
   ci 
 }
 
-runAnalysisForBeta = function(observed,vac1,vac2,counts_data,cohort_size=9200000,last.date='2021-02-10') {
-  d = data.frame(beta=seq(0.01,12,by=0.01))
+runAnalysis14days = function(observed,vac1,vac2,counts_data,cohort_size,last.date='2021-02-22',beta=1,p2=0.81,dash=2) {
+  d=c()
+  g5 = getCounts(vac2,counts_data,'2021-01-10',last.date,14,30,cohort_size=cohort_size)
+  for (j in 1:26) {
+    d[j] = calculateEffectiveness(observed[5],g5,beta,cohort_size,vac2,counts_data,p2,j-1)
+  }
+  df = data.frame(Shift=0:25,VE=d)
+  print(df)
+  df
+  #ggplot(df,aes(Shift,VE))+geom_line()+geom_point()+theme_classic()+ylim(0,1)+geom_vline(xintercept=dash,linetype='dashed')
+}
+
+runAnalysisForBeta = function(observed,vac1,vac2,counts_data,cohort_size,group,last.date='2021-02-22') {
+  d = data.frame(beta=seq(0.01,2,by=0.01))
   se = d
   
   g1 = getCounts(vac1,counts_data,'2020-12-20',last.date,0,14,cohort_size=cohort_size)
   g2 = getCounts(vac1,counts_data,'2020-12-20',last.date,14,7,cohort_size=cohort_size)
   g3 = getCounts(vac2,counts_data,'2021-01-10',last.date,0,7,cohort_size=cohort_size)
   g4 = getCounts(vac2,counts_data,'2021-01-10',last.date,7,7,cohort_size=cohort_size)
-  g5 = getCounts(vac2,counts_data,'2021-01-10',last.date,14,16,cohort_size=cohort_size)
+  g5 = getCounts(vac2,counts_data,'2021-01-10',last.date,14,30,cohort_size=cohort_size)
   
-  for (i in 1:1200) {
-    d$Dose2.0[i] = calculateEffectiveness(observed[3],g3,i/100,cohort_size,vac2,counts_data,'2021-01-10',last.date,0,7)
-    d$Dose2.7[i] = calculateEffectiveness(observed[4],g4,i/100,cohort_size,vac2,counts_data,'2021-01-10',last.date,7,7)
-    d$Dose2.14[i] = calculateEffectiveness(observed[5],g5,i/100,cohort_size,vac2,counts_data,'2021-01-10',last.date,14,16)
+  for (i in 1:200) {
+    d$Dose2.0[i] = calculateEffectiveness(observed[3],g3,i/100,cohort_size,vac2,counts_data,NULL,group)
+    d$Dose2.7[i] = calculateEffectiveness(observed[4],g4,i/100,cohort_size,vac2,counts_data,d$Dose2.0[i],group)
+    d$Dose2.14[i] = calculateEffectiveness(observed[5],g5,i/100,cohort_size,vac2,counts_data,d$Dose2.0[i],group)
     
-    d$Dose1.0[i] = calculateEffectiveness(observed[1],g1,i/100,cohort_size,vac2,counts_data,'2020-12-20',last.date,0,14,d$Dose2.7[i]) 
-    d$Dose1.14[i] = calculateEffectiveness(observed[2],g2,i/100,cohort_size,vac2,counts_data,'2020-12-20',last.date,14,7,d$Dose2.7[i])
-
+    d$Dose1.0[i] = calculateEffectiveness(observed[1],g1,i/100,cohort_size,vac2,counts_data,d$Dose2.0[i],group) 
+    d$Dose1.14[i] = calculateEffectiveness(observed[2],g2,i/100,cohort_size,vac2,counts_data,d$Dose2.0[i],group)
+    
     #   expected= getExpectedCounts(vac2,counts_data,'2021-01-10',last.date,14,16,i/100,cohort_size=cohort_size)
   }
   ci = calculateCI(observed[3],d$Dose2.0)  
@@ -117,20 +138,21 @@ runAnalysisForBeta = function(observed,vac1,vac2,counts_data,cohort_size=9200000
   ci = calculateCI(observed[4],d$Dose2.7)  
   se$Dose2.7.low =ci[,1]
   se$Dose2.7.hi = ci[,2]
+  
   ci = calculateCI(observed[5],d$Dose2.14)  
-  se$Dose2.14.low = ci[1]
-  se$Dose2.14.hi = ci[2]
+  se$Dose2.14.low = ci[,1]
+  se$Dose2.14.hi = ci[,2]
   ci = calculateCI(observed[1],d$Dose1.0)
   se$Dose1.0.low =ci[,1]
   se$Dose1.0.hi = ci[,2]
   ci = calculateCI(observed[2],d$Dose1.14)  
   se$Dose1.14.low =ci[,1]
   se$Dose1.14.hi = ci[,2]
-
+  
   list(d,se)
 }
 
-createPlot = function(df) {
+createPlotBars = function(df) {
   #x = melt(df,id.vars = c('beta','Group'))
   min.vals = apply(df[,seq(3,ncol(df),by=3)],2,FUN=function(x) min(which(x>0.01 & df$Group=='1st dose 0-13')))
   x = matrix(NA,length(min.vals),5)
@@ -178,8 +200,8 @@ createPlot = function(df) {
   
   
 }
-  
-  
+
+
 createPlot = function(df,field,tit) {
   df$Cases = df[,field]
   df$Cases.low = df[,paste0(field,'.low')]
@@ -194,15 +216,68 @@ createPlot = function(df,field,tit) {
     theme_classic()+
     scale_color_brewer(palette='Set1')+
     scale_fill_brewer(palette='Set1')+
-    geom_vline(xintercept = beta.low*0.9,linetype='dashed')+
-    geom_vline(xintercept = beta.low*1.1,linetype='dashed')+
-    geom_label_repel(data=subset(df,abs(beta-round(beta.low*90)/100)<0.009),aes(label=paste0(round(100*Cases),'%')),nudge_x=0.04, nudge_y=0.04, size=2,show.legend=F)+
-    geom_label_repel(data=subset(df,abs(beta-round(beta.low*110)/100)<0.009),aes(label=paste0(round(100*Cases),'%')),nudge_x=0.04, nudge_y=0.04, size=2,show.legend=F)+
+    geom_vline(xintercept = beta.low*0.8,linetype='dashed')+
+    geom_vline(xintercept = beta.low*1.2,linetype='dashed')+
+    geom_label_repel(data=subset(df,abs(beta-round(beta.low*80)/100)<0.009),aes(label=paste0(round(100*Cases),'%')),nudge_x=0.04, nudge_y=0.04, size=2,show.legend=F)+
+    geom_label_repel(data=subset(df,abs(beta-round(beta.low*120)/100)<0.009),aes(label=paste0(round(100*Cases),'%')),nudge_x=0.04, nudge_y=0.04, size=2,show.legend=F)+
     geom_vline(xintercept = beta.low,linetype='dashed')+
     #geom_vline(xintercept = beta.low,linetype='dashed')+
     geom_label_repel(data=subset(df,beta==beta.low),aes(label=paste0(round(100*Cases),'%')),nudge_x=0.04, nudge_y=0.04, size=2,show.legend=F)+
     #geom_label_repel(data=subset(df,beta==beta.low),aes(label=paste0(round(100*Cases60plus),'%')),nudge_x=0.04, nudge_y=0.04, size=2,show.legend=F)+
     ggtitle(tit)+ylab('1-Observed/Expected')+ylim(c(-0.1,1))+
-    scale_x_continuous(limits = c(beta.low*0.85,beta.low*1.15),breaks=c(beta.low*0.9,beta.low,beta.low,beta.low*1.1))+
+    scale_x_continuous(limits = c(beta.low*0.75,beta.low*1.25),breaks=c(beta.low*0.8,beta.low,beta.low,beta.low*1.2))+
     xlab(expression(beta))
+}
+
+
+createMatrix = function(date1,date2,p = c(0,40,60,83,94),H=1428000,cases,vac,beta) {
+  date1 = as.Date('2020-12-20')
+  date2 = as.Date(date2)
+  N = as.numeric(date2-date1)+1
+  
+  m = matrix(NA,N,N)
+  for (i in 1:N) {
+    m[min(i,N):min(ncol(m),(i+14-1)),i] = p[1]
+  }
+  
+  for (i in 1:(N-14)) {
+    m[min(i+14,N):min(N,i+14+7-1),i] = p[2]
+  }
+  for (i in 1:(N-21)) {
+    m[min(i+21,N):min(N,i+21+7-1),i] = p[3]
+  }
+  for (i in 1:(N-28)) {
+    m[min(i+28,N):min(N,i+28+7-1),i] = p[4]
+  }
+  for (i in 1:(N-35)) {
+    m[min(i+35,N):N,i] = p[5]
+  }
+  
+  beta=1
+  
+  S = cases[1:N,'amount']
+  V = vac$Counts
+  
+  M = m
+  for (i in 1:N) {
+    M[i,] = V[i]*(1-m[,i]/100)
+  }
+  
+  d = S/(colSums(M,na.rm=T)*beta+(H-cumsum(V)))
+  
+  df = data.frame(Date=as.Date(seq(date1+3,date2-3,by=1)),NoVaccine=zoo::rollmean(d*H,k=7),WithVaccine=zoo::rollmean(S,k=7))
+  df = melt(df,id.vars = 'Date')
+  colnames(df) = c('Date','Scenario','Cases')
+  ggplot(df,aes(Date,Cases,color=Scenario))+geom_line(size=2)+
+    theme_classic()+ylab('Severe cases (60+)')+ylim(c(0,260))
+  # 
+  # colnames(m) = as.character(as.Date(seq(date1,date2,by=1),origin='1970-01-01'))
+  # rownames(m) = colnames(m)
+  # superheat(t(m)[nrow(m):1,],scale=F,pretty.order.rows = F,pretty.order.cols=F,
+  #           left.label.text.size=2,bottom.label.text.size=2,bottom.label.size=0.21,
+  #           left.label.size=0.21,heat.pal = c("white", "#542788"),
+  #           bottom.label.text.angle=90,legend = FALSE) 
+  
+  
+  
 }
