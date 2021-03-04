@@ -193,9 +193,9 @@ d = melt(d,id.vars = c('Days_Removed'))
 ggplot(d,aes(Days_Removed,value,color=variable,group=variable))+geom_line()+geom_point()+
   theme_classic()+ylim(0.85,1)+geom_vline(xintercept=2,linetype='dashed')+
   geom_vline(xintercept=4,linetype='dashed')+
-  geom_vline(xintercept=8,linetype='dashed')
+  geom_vline(xintercept=8,linetype='dashed')+xlim(c(0,20))
 
-ggsave('~/Documents/covid_analyses/figure1.2.23.2021.shift.jpg',width=8,height = 3)
+ggsave('~/Documents/covid_analyses/figure1.2.23.2021.shift.pdf',width=6,height = 4)
 
 
 
